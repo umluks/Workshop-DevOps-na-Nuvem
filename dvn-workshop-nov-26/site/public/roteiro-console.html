@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Roteiro de montagem do Black Friday Lab no Console AWS e tabela de capacidade de 100 mil a 1 milhão de pedidos.">
+  <title>Montagem manual do laboratório no Console AWS | DevOps na nuvem</title>
+  <style>
+:root {
+  color-scheme: dark;
+  --bg: #120d0a;
+  --surface: #211710;
+  --line: #fdba7433;
+  --text: #fff7ef;
+  --muted: #decbc0;
+  --signal: #fdba74;
+  font: 16px/1.65 Arial, Helvetica, sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at 84% 14%, #392015 0%, transparent 54%) fixed,
+    linear-gradient(#fdba740b 1px, transparent 1px),
+    linear-gradient(90deg, #fdba740b 1px, transparent 1px), var(--bg);
+  background-size: auto, 72px 72px, 72px 72px, auto;
+  color: var(--text);
+}
+a { color: var(--signal); text-underline-offset: .2em; }
+:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+.wrap { width: min(100% - 2rem, 1220px); margin-inline: auto; }
+.site-header { border-bottom: 1px solid var(--line); }
+.site-header .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .65rem 1.5rem; padding-block: .9rem; }
+.site-header a { color: var(--text); font-size: .9rem; }
+.hero { padding-block: 3.5rem 2.6rem; border-bottom: 1px solid var(--line); }
+.site-header nav { display: flex; flex-wrap: wrap; gap: .65rem 1.25rem; }
+.site-header nav a:hover { color: var(--signal); }
+.eyebrow { display: block; margin-bottom: 1rem; color: var(--signal); font: 700 .85rem ui-monospace, monospace; letter-spacing: .16em; text-transform: uppercase; }
+.title-accent { color: var(--signal); background: linear-gradient(90deg, #fdba74, #fde68a, #fef9c3); background-clip: text; -webkit-text-fill-color: transparent; }
+.hero p { max-width: 74ch; color: var(--muted); margin-bottom: 0; }
+h1, h2, h3 { line-height: 1.14; letter-spacing: -.035em; }
+h1 { font-size: clamp(2.25rem, 6vw, 4.25rem); max-width: 21ch; margin: 0; font-weight: 500; }
+h2 { font-size: clamp(1.6rem, 4vw, 2.5rem); margin: 0 0 1rem; }
+h3 { font-size: 1.26rem; margin-top: 2rem; }
+h2, h3, details { scroll-margin-top: 1rem; }
+.layout { display: grid; grid-template-columns: 12rem minmax(0, 1fr); gap: clamp(1.5rem, 4vw, 3.5rem); }
+.toc { position: sticky; top: 1rem; align-self: start; padding-block: 2rem; }
+.toc strong { display: block; margin-bottom: .55rem; }
+.toc ul { list-style: none; margin: 0; padding: 0; }
+.toc li { margin: 0 0 .5rem; }
+.toc a { color: var(--muted); font-size: .92rem; }
+.toc a:hover { color: var(--signal); }
+section { padding-block: 2.3rem; border-bottom: 1px solid var(--line); }
+p, li { overflow-wrap: anywhere; }
+section ol { padding-left: 1.45rem; }
+section li { padding-left: .3rem; margin-bottom: .8rem; }
+section li::marker { color: var(--signal); font-weight: 700; }
+code { font: .9em ui-monospace, SFMono-Regular, Consolas, monospace; color: #ffe5b6; }
+:not(pre) > code { background: #3a2417; padding: .1em .28em; border-radius: .2em; }
+pre, details, .table-scroll { background: var(--surface); border: 1px solid var(--line); border-radius: .65rem; }
+pre { margin-block: 1rem; padding: .9rem; overflow: auto; line-height: 1.5; }
+details { margin-block: .85rem; padding: .7rem .9rem; }
+summary { cursor: pointer; font-weight: 650; }
+details pre { margin-bottom: .15rem; }
+.gateway-code { white-space: pre-wrap; overflow-wrap: anywhere; }
+.table-scroll { overflow-x: auto; margin-block: 1rem; }
+table { width: 100%; min-width: 38rem; border-collapse: collapse; font-size: .9rem; font-variant-numeric: tabular-nums; }
+th, td { padding: .65rem .8rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+thead th { background: #302017; color: var(--text); }
+thead th small { display: block; margin-top: .4rem; color: var(--muted); font-size: .78rem; font-weight: 450; line-height: 1.35; }
+.sizing-table { min-width: 46rem; }
+.sizing-table th, .sizing-table td { text-align: center; }
+.sizing-table tbody th { color: #fde68a; white-space: nowrap; }
+.sizing-table td small { display: block; margin-top: .35rem; color: var(--muted); font-size: .78rem; line-height: 1.4; }
+.sizing-table td small span { display: block; }
+
+tbody tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 650; color: #fde68a; }
+.env-table td:nth-child(2) { min-width: 12rem; max-width: 19rem; }
+.env-table td:nth-child(3) { min-width: 7rem; }
+.env-table td code { overflow-wrap: anywhere; }
+footer { padding-block: 1.25rem 2rem; }
+@media (max-width: 760px) {
+  .hero { padding-block: 2rem 1.6rem; }
+  .layout { display: block; }
+  .toc { position: static; padding-block: 1.25rem .2rem; border-bottom: 1px solid var(--line); }
+  .toc ul { display: flex; flex-wrap: wrap; gap: 0 1rem; }
+  section { padding-block: 1.8rem; }
+}
+@media print {
+  :root { color-scheme: light; --bg: white; --surface: white; --line: #bbb; --text: #111; --muted: #333; --signal: #7c3e10; }
+  body, thead th, :not(pre) > code { background: none; }
+  .title-accent { background: none; color: inherit; -webkit-text-fill-color: currentColor; }
+  .sizing-table tbody th { color: #222; }
+  .site-header, .toc, footer { display: none; }
+  .layout { display: block; }
+  td:first-child, code { color: #222; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  table { min-width: 0; font-size: 8pt; }
+  th, td { padding: .2rem; }
+}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap"><strong>Residência · DevOps na Nuvem</strong><nav aria-label="Links do workshop"><a href="/workshop/apresentacao#formas-de-testar">Voltar à apresentação</a><a href="https://d32k5wws9edenw.cloudfront.net/">Painel do laboratório</a><a href="https://d32k5wws9edenw.cloudfront.net/guia-workshop.html">Guia do workshop</a></nav></div>
+</header>
+<div class="hero"><div class="wrap"><span class="eyebrow">Workshop · Laboratório Black Friday</span><h1>Montagem manual do laboratório no <span class="title-accent">console aws</span></h1><p>Use uma stack ou recursos separados para a aula. Escolha a mesma região para Lambda, SQS, DynamoDB e API Gateway. Neste roteiro os exemplos usam <code>us-east-1</code>. O CloudFront publica o painel estático. O navegador e a Lambda geradora fazem chamadas diretamente ao API Gateway.</p>
+</div></div>
+<div class="wrap layout">
+  <nav class="toc" aria-label="Etapas do roteiro">
+    <strong>Nesta página</strong>
+    <ul>
+      <li><a href="#backend">DynamoDB e filas FIFO</a></li>
+      <li><a href="#pacotes-lambda">Build e ZIP das Lambdas</a></li>
+      <li><a href="#variaveis-lambda">Variáveis das Lambdas</a></li>
+      <li><a href="#api-gateway">API Gateway e rotas</a></li>
+      <li><a href="#integracoes-sqs">Mappings do SQS</a></li>
+      <li><a href="#headers-cors">Headers, CORS e API key</a></li>
+      <li><a href="#s3-cloudfront">S3 e CloudFront</a></li>
+      <li><a href="#dimensionamento">De 100 mil a 1 milhão</a></li>
+      <li><a href="#burst-limit">Rate e burst</a></li>
+    </ul>
+  </nav>
+  <main>
+<section>
+<h2 id="backend">1. Prepare o backend que as rotas vão usar</h2>
+
+<h3 id="fila-fifo">DynamoDB e filas FIFO</h3>
+<ol>
+<li>Em <strong>DynamoDB → Tables → Create table</strong>, crie uma tabela <strong>On-demand</strong>. Use <code>pk</code> como partition key e <code>sk</code> como sort key, ambas String. Em <strong>Additional settings → Time to Live</strong>, habilite o atributo <code>ttl</code>.</li>
+<li>Crie primeiro uma DLQ FIFO e depois a fila principal FIFO em SQS → Queues → Create queue. Use nomes terminados em .fifo e criptografia SSE-SQS. Na fila principal, ligue High throughput FIFO para usar deduplicação e throughput por grupo. Desabilite a deduplicação por conteúdo porque o Gateway envia o ID explicitamente. Configure redrive para a DLQ após 20 recebimentos, valor escolhido no laboratório para dar margem a falhas transitórias durante os testes.</li>
+<li>Na fila principal, em <strong>Edit → Configuration → Visibility timeout</strong>, configure <strong>180 segundos</strong>.</li>
+</ol>
+<p>O padrão do SQS é 30 s. Neste laboratório, o timeout da Processor é 30 s e o gatilho FIFO não usa janela de batching. A AWS recomenda pelo menos seis vezes o timeout da função consumidora para dar margem a novas tentativas em caso de throttling. Por isso, configure 6 × 30 s = 180 s na fila principal. Esse tempo começa quando a mensagem é recebida. Se o processamento terminar com sucesso, a mensagem é removida imediatamente. Se ela não for removida, pode voltar a ficar disponível ao expirar a visibilidade. <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html">Padrão do SQS</a> · <a href="https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-configure.html">Recomendação da AWS para Lambda com SQS</a></p>
+<h3 id="pacotes-lambda">Compile e empacote as Lambdas</h3>
+<p>Na raiz do laboratório, instale as dependências, compile o TypeScript e remova as dependências de desenvolvimento antes de entrar em <code>backend/dist</code>.</p>
+<pre><code class="language-bash">cd backend &amp;&amp;
+  npm ci &amp;&amp;
+  npm run build &amp;&amp;
+  npm prune --omit=dev &amp;&amp;
+  cd dist</code></pre>
+<p>Já em <code>backend/dist</code>, execute os três comandos abaixo no macOS. Os ZIPs são criados na própria <code>dist</code>.</p>
+<pre><code class="language-bash">/usr/bin/tar -a -cf lambda-controller.zip lambda-controller shared -C .. package.json node_modules
+/usr/bin/tar -a -cf lambda-generator.zip lambda-generator shared -C .. package.json node_modules
+/usr/bin/tar -a -cf lambda-processor.zip lambda-processor shared -C .. package.json node_modules</code></pre>
+<p>O <code>-a</code> seleciona o formato pela extensão <code>.zip</code>. O <code>tar</code> lê a pasta da função e <code>shared/</code> na <code>dist</code>. Depois, <code>-C ..</code> muda o diretório de leitura para <code>backend</code> e adiciona <code>package.json</code> e <code>node_modules/</code> na raiz do ZIP.</p>
+<p>Antes de enviar o ZIP, confirme que o <code>tar</code> terminou sem erros e que o pacote contém o arquivo de entrada e as dependências. Para a Controller, o comando deve mostrar as quatro entradas abaixo.</p>
+<pre><code class="language-bash">unzip -Z1 lambda-controller.zip | grep -Ex &#x27;lambda-controller/control\.js|shared/db\.js|package\.json|node_modules/&#x27;</code></pre>
+<pre><code>lambda-controller/control.js
+shared/db.js
+package.json
+node_modules/</code></pre>
+<h3 id="lambda-console">Crie as funções e o gatilho</h3>
+<p>Em Lambda → Create function → Author from scratch, crie as três funções com Node.js 22. Em Code → Upload from → .zip file, envie o ZIP correspondente: lambda-controller.zip, lambda-generator.zip ou lambda-processor.zip. Em Runtime settings → Edit, escolha o handler de cada função.</p>
+<p>Para a Controller, envie <code>lambda-controller.zip</code> e configure <code>lambda-controller/control.handler</code> em <strong>Runtime settings → Edit</strong> antes de testar. O prefixo <code>lambda-controller/</code> corresponde à pasta do <code>control.js</code> dentro do ZIP.</p>
+<p>Crie as roles em <strong>IAM → Roles</strong> com confiança para <code>lambda.amazonaws.com</code>. Anexe <code>AWSLambdaBasicExecutionRole</code> a cada role para o CloudWatch Logs e acrescente as ações abaixo nos recursos correspondentes. Escolha a role da função ao criá-la.</p>
+<div class="table-scroll" tabindex="0"><table><thead><tr><th scope="col">Função</th><th scope="col">Handler</th><th scope="col">Memória</th><th scope="col">Timeout</th><th scope="col">Permissões e configuração</th></tr></thead><tbody><tr><td>Control</td><td>lambda-controller/control.handler</td><td>512 MB</td><td>30 s</td><td>DynamoDB GetItem, BatchGetItem, BatchWriteItem, PutItem e Query na tabela. Lambda InvokeFunction no ARN da Generator. SQS GetQueueAttributes nas duas filas.</td></tr><tr><td>Generator</td><td>lambda-generator/generator.handler</td><td>1.024 MB</td><td>660 s</td><td>DynamoDB PutItem na tabela. Em Configuration → Asynchronous invocation, use zero tentativas adicionais.</td></tr><tr><td>Processor</td><td>lambda-processor/processor.handler</td><td>512 MB</td><td>30 s</td><td>DynamoDB GetItem, BatchGetItem, PutItem e UpdateItem na tabela, incluindo as operações usadas na transação. SQS ReceiveMessage, DeleteMessage e GetQueueAttributes na fila principal.</td></tr></tbody></table></div>
+<h3 id="falhas-parciais-sqs">Ative o reporte de falhas parciais do SQS</h3>
+<p>Em <strong>Lambda → Processor → Configuration → Triggers</strong>, adicione ou edite o gatilho da fila principal FIFO. Defina <strong>Batch size = 10</strong>, marque <strong>Report batch item failures</strong> e salve. A opção corresponde a <code>ReportBatchItemFailures</code> na API da AWS.</p>
+<p>A Processor devolve os IDs das mensagens com falha em <code>batchItemFailures</code>. Em FIFO, ela também inclui as mensagens seguintes que ainda não processou, para preservar a ordem. O gatilho remove as mensagens concluídas e as demais voltam a ficar disponíveis após o visibility timeout. Sem essa opção, uma resposta normal da função pode fazer o gatilho remover o lote inteiro, inclusive pedidos que falharam no DynamoDB. <a href="https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-errorhandling.html#services-sqs-batchfailurereporting">Documentação da AWS</a></p>
+<h3 id="variaveis-lambda">Variáveis das Lambdas</h3>
+<p>Em <strong>Lambda → Configuration → Environment variables</strong>, configure os valores abaixo.</p>
+<div class="table-scroll" tabindex="0"><table class="env-table">
+<thead><tr><th scope="col">Função</th><th scope="col">Variável</th><th scope="col">Valor inicial</th><th scope="col">Para que serve</th></tr></thead>
+<tbody>
+<tr><td>Todas</td><td><code>TABLE</code></td><td>Nome da tabela DynamoDB</td><td>Indica onde ler e gravar o histórico, o estoque, os pedidos e as métricas.</td></tr>
+<tr><td>Control</td><td><code>QUEUE</code></td><td>URL da fila principal</td><td>A Control consulta quantas mensagens estão na fila ou em processamento para mostrar no painel.</td></tr>
+<tr><td>Control</td><td><code>DLQ</code></td><td>URL da fila de erros</td><td>A Control consulta quantas mensagens foram para a fila de erros. O redrive é configurado no SQS.</td></tr>
+<tr><td>Control</td><td><code>GENERATOR</code></td><td>Nome da função Generator</td><td>Indica qual Lambda a Control deve invocar para iniciar cada worker.</td></tr>
+</tbody></table></div>
+</section>
+<section>
+<h2 id="api-gateway">2. Crie o API Gateway e as rotas</h2>
+<p>Em <strong>API Gateway → Create API</strong>, escolha <strong>REST API → Build → New API</strong>, endpoint <strong>Regional</strong>. Em <strong>Settings</strong>, use <strong>API key source = Header</strong>. Em <strong>Resources</strong>, crie <code>orders</code>, <code>batch</code> como filho de <code>orders</code>, <code>runs</code> e <code>{runId}</code> como filho de <code>runs</code>. Crie os métodos abaixo. Em <strong>Method request</strong>, habilite <strong>API key required</strong> nos cinco métodos de negócio.</p>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>Método e caminho</th>
+<th>Integração</th>
+<th>Corpo e resposta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST /runs</code></td>
+<td>Lambda proxy → Control</td>
+<td>JSON com <code>total</code>, <code>duration</code> em segundos, <code>stock</code>, <code>workers</code> e <code>sendMode</code>. Retorna 201 com <code>runId</code></td>
+</tr>
+<tr>
+<td><code>GET /runs</code></td>
+<td>Lambda proxy → Control</td>
+<td>Histórico, com <code>?cursor=...</code> opcional para paginação</td>
+</tr>
+<tr>
+<td><code>GET /runs/{runId}</code></td>
+<td>Lambda proxy → Control</td>
+<td>Consulta o relatório da execução indicada</td>
+</tr>
+<tr>
+<td><code>POST /orders</code></td>
+<td>AWS Service → SQS → <code>SendMessage</code></td>
+<td>Um pedido com <code>runId</code>, <code>orderId</code>, <code>shard</code> e <code>sentAt</code> opcional. Retorna 202 quando enfileirado</td>
+</tr>
+<tr>
+<td><code>POST /orders/batch</code></td>
+<td>AWS Service → SQS → <code>SendMessageBatch</code></td>
+<td>JSON com <code>orders</code> contendo de 1 a 10 pedidos. Retorna HTTP 200 com <code>Successful</code> e <code>Failed</code> por entrada</td>
+</tr>
+<tr>
+<td><code>OPTIONS</code> nos quatro recursos</td>
+<td>Mock com CORS</td>
+<td>Responde ao preflight sem exigir chave</td>
+</tr>
+</tbody>
+</table></div>
+<p>Nas três rotas de controle, escolha <strong>Lambda function</strong>, selecione Control e habilite <strong>Lambda proxy integration</strong>. Autorize a invocação pelo API Gateway quando o Console solicitar. <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-method-settings-console.html">Configurar integração no Console</a></p>
+<h3 id="integracoes-sqs">Integrações diretas com o SQS</h3>
+<p>As rotas são independentes. Sem a configuração de SendMessageBatch, o Gateway não converte um lote em chamadas SendMessage. Para enviar individualmente, a geradora usa POST /orders com um objeto de pedido no JSON. O mapping dessa rota acrescenta Action=SendMessage, serializa o pedido em MessageBody e preenche MessageGroupId com runId-shard e MessageDeduplicationId com orderId.</p>
+<p>Crie em <strong>IAM → Roles</strong> uma role com trust para <code>apigateway.amazonaws.com</code> e uma política que permite <code>sqs:SendMessage</code> no ARN da fila principal. Essa ação IAM também cobre <code>SendMessageBatch</code>. Nos dois POSTs de pedidos, selecione <strong>AWS service = SQS</strong>, a região da fila, <strong>HTTP method = POST</strong>, <strong>Action type = Use path override</strong> e informe o ARN dessa role em <strong>Execution role</strong>. Em <strong>Integration request</strong>, configure os cabeçalhos estáticos, o mapping template de entrada <code>application/json</code> e o passthrough <strong>Never</strong>. <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_AddPermission.html">Permissões do SQS</a></p>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>Campo</th>
+<th><code>POST /orders</code></th>
+<th><code>POST /orders/batch</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Path override</td>
+<td><code>ID_DA_CONTA/NOME_DA_FILA.fifo</code></td>
+<td><code>/</code> para a raiz do serviço</td>
+</tr>
+<tr>
+<td>Header estático <code>Content-Type</code></td>
+<td><code>'application/x-www-form-urlencoded'</code></td>
+<td><code>'application/x-amz-json-1.0'</code></td>
+</tr>
+<tr>
+<td>Header estático <code>X-Amz-Target</code></td>
+<td>—</td>
+<td><code>'AmazonSQS.SendMessageBatch'</code></td>
+</tr>
+<tr>
+<td>Destino da fila</td>
+<td>Caminho da integração</td>
+<td><code>QueueUrl</code> no JSON transformado</td>
+</tr>
+</tbody>
+</table></div>
+<h4>1. Models em Method request</h4>
+<p>Associe <code>Order</code> a <code>POST /orders</code> e <code>OrderBatch</code> a <code>POST /orders/batch</code>. Em ambas, selecione <code>application/json</code> e <strong>Validate body</strong>. Os <a href="#modelos" onclick="document.getElementById('modelos').open = true">schemas completos</a> definem o que é válido; os JSONs abaixo são corpos de exemplo para testar as rotas. Substitua o <code>runId</code> pelo valor retornado por <code>POST /runs</code>.</p>
+<p><strong>POST /orders</strong> · um pedido no corpo:</p>
+<pre><code class="language-json">{
+  &quot;runId&quot;: &quot;11111111-1111-4111-8111-111111111111&quot;,
+  &quot;orderId&quot;: &quot;order_0&quot;,
+  &quot;shard&quot;: 0
+}</code></pre>
+<p><strong>POST /orders/batch</strong> · um objeto <code>orders</code> com 1 a 10 pedidos. Aqui, os dois são do mesmo shard, como no gerador:</p>
+<pre><code class="language-json">{
+  &quot;orders&quot;: [
+    {
+      &quot;runId&quot;: &quot;11111111-1111-4111-8111-111111111111&quot;,
+      &quot;orderId&quot;: &quot;order_0&quot;,
+      &quot;shard&quot;: 0
+    },
+    {
+      &quot;runId&quot;: &quot;11111111-1111-4111-8111-111111111111&quot;,
+      &quot;orderId&quot;: &quot;order_1024&quot;,
+      &quot;shard&quot;: 0
+    }
+  ]
+}</code></pre>
+<h4>2. Templates em Integration request</h4>
+<p>Cadastre os templates abaixo como <code>application/json</code>. O VTL traduz o corpo para o protocolo do SQS depois da validação. As rotas <code>/runs</code> e <code>/runs/{runId}</code> usam integração proxy com a Lambda de controle e não têm esses templates.</p>
+<h5>POST /orders · SendMessage</h5>
+<p><strong>1. JSON de entrada</strong></p>
+<pre class="gateway-code"><code class="language-json">{
+  &quot;runId&quot;: &quot;11111111-1111-4111-8111-111111111111&quot;,
+  &quot;orderId&quot;: &quot;order_0&quot;,
+  &quot;shard&quot;: 0
+}</code></pre>
+<p>Para <code>POST /orders</code>, cole o <strong>2. VTL de transformação</strong> em uma única linha. A versão em linhas abaixo destaca cada campo.</p>
+<pre class="gateway-code"><code class="language-vtl">Action=SendMessage
+&amp;MessageBody=$util.urlEncode($input.body)
+&amp;MessageGroupId=$util.urlEncode($input.path(&quot;$.runId&quot;))-$util.urlEncode($input.path(&quot;$.shard&quot;))
+&amp;MessageDeduplicationId=$util.urlEncode($input.path(&quot;$.orderId&quot;))</code></pre>
+<details><summary>Copiar o VTL em uma única linha</summary><pre class="gateway-code"><code class="language-vtl">Action=SendMessage&amp;MessageBody=$util.urlEncode($input.body)&amp;MessageGroupId=$util.urlEncode($input.path(&quot;$.runId&quot;))-$util.urlEncode($input.path(&quot;$.shard&quot;))&amp;MessageDeduplicationId=$util.urlEncode($input.path(&quot;$.orderId&quot;))</code></pre></details>
+<p><strong>3. Campos enviados ao SQS</strong></p>
+<pre class="gateway-code"><code class="language-json">{
+  &quot;Action&quot;: &quot;SendMessage&quot;,
+  &quot;MessageBody&quot;: &quot;{\&quot;runId\&quot;:\&quot;11111111-1111-4111-8111-111111111111\&quot;,\&quot;orderId\&quot;:\&quot;order_0\&quot;,\&quot;shard\&quot;:0}&quot;,
+  &quot;MessageGroupId&quot;: &quot;11111111-1111-4111-8111-111111111111-0&quot;,
+  &quot;MessageDeduplicationId&quot;: &quot;order_0&quot;
+}</code></pre>
+<p>O JSON acima mostra os campos da chamada ao SQS. O Gateway envia esses campos como <code>application/x-www-form-urlencoded</code>.</p>
+<h5>POST /orders/batch · SendMessageBatch</h5>
+<p><strong>1. JSON de entrada</strong></p>
+<pre class="gateway-code"><code class="language-json">{
+  &quot;orders&quot;: [
+    {
+      &quot;runId&quot;: &quot;11111111-1111-4111-8111-111111111111&quot;,
+      &quot;orderId&quot;: &quot;order_0&quot;,
+      &quot;shard&quot;: 0
+    }
+  ]
+}</code></pre>
+<p>Para <code>POST /orders/batch</code>, substitua a URL da fila antes de colar o <strong>2. VTL de transformação</strong>.</p>
+<pre class="gateway-code"><code class="language-vtl">{
+  &quot;QueueUrl&quot;: &quot;https://sqs.us-east-1.amazonaws.com/ID_DA_CONTA/NOME_DA_FILA.fifo&quot;,
+  &quot;Entries&quot;: [
+#foreach($order in $input.path(&#x27;$.orders&#x27;))
+  #set($path = &quot;$.orders[$foreach.index]&quot;)
+  #set($runId = $order.runId)
+  #set($shard = $order.shard)
+    {
+      &quot;Id&quot;: &quot;$foreach.index&quot;,
+      &quot;MessageBody&quot;: &quot;$util.escapeJavaScript($input.json($path)).replaceAll(&quot;\\&#x27;&quot;,&quot;&#x27;&quot;)&quot;,
+      &quot;MessageGroupId&quot;: &quot;${runId}-${shard}&quot;,
+      &quot;MessageDeduplicationId&quot;: &quot;$order.orderId&quot;
+    }#if($foreach.hasNext),#end
+#end
+  ]
+}
+</code></pre>
+<p><strong>3. JSON de saída para o SQS</strong></p>
+<pre class="gateway-code"><code class="language-json">{
+  &quot;QueueUrl&quot;: &quot;https://sqs.us-east-1.amazonaws.com/ID_DA_CONTA/NOME_DA_FILA.fifo&quot;,
+  &quot;Entries&quot;: [
+    {
+      &quot;Id&quot;: &quot;0&quot;,
+      &quot;MessageBody&quot;: &quot;{\&quot;runId\&quot;:\&quot;11111111-1111-4111-8111-111111111111\&quot;,\&quot;orderId\&quot;:\&quot;order_0\&quot;,\&quot;shard\&quot;:0}&quot;,
+      &quot;MessageGroupId&quot;: &quot;11111111-1111-4111-8111-111111111111-0&quot;,
+      &quot;MessageDeduplicationId&quot;: &quot;order_0&quot;
+    }
+  ]
+}</code></pre>
+<p><strong>As expressões que fazem a tradução:</strong> no individual, <code>$input.body</code> lê o JSON inteiro e <code>$util.urlEncode(...)</code> prepara os valores para o formulário. <code>$input.path("$.runId")</code> e <code>$input.path("$.shard")</code> formam o <code>MessageGroupId</code>; <code>orderId</code> vira <code>MessageDeduplicationId</code>. No lote, <code>#foreach($order in $input.path('$.orders'))</code> cria uma entrada por pedido, e <code>$util.escapeJavaScript($input.json($path))</code> prepara o JSON daquele pedido para ir como texto dentro de <code>MessageBody</code>. O <code>replaceAll</code> corrige o escape das aspas simples para manter o JSON válido.</p>
+<h4>3. Templates em Integration response</h4>
+<p>O Gateway recebe o status e o corpo HTTP do SQS, seleciona o template e devolve o status e o corpo da nossa API.</p>
+<ul>
+<li><strong>Individual:</strong> o <code>SendMessage</code> responde com HTTP 200 e XML, que traz campos como <code>MessageId</code> e <code>SequenceNumber</code> no caso da FIFO. O template produz <code>{"accepted": true}</code> e o Gateway devolve HTTP 202. <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SendMessage.html">Resposta de SendMessage</a></li>
+<li><strong>Lote:</strong> o <code>SendMessageBatch</code> responde com HTTP 200 e JSON com <code>Successful</code> e <code>Failed</code>. O VTL <code>$input.body</code> repassa o corpo e o Gateway mantém HTTP 200, inclusive se alguns itens falharem. <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SendMessageBatch.html">Resposta de SendMessageBatch</a></li>
+</ul>
+<p>Em <strong>Method response</strong>, crie 202 para o envio individual ou 200 para lote, mais 400, 429 e 500. Declare o header <code>Access-Control-Allow-Origin</code> nas respostas. Em <strong>Integration response</strong>, associe o valor estático <code>'*'</code> a esse header em cada resposta, incluindo a resposta padrão. Mapeie o sucesso individual para <code>{&quot;accepted&quot;:true}</code> e o sucesso em lote para <code>$input.body</code>. Use seleção por status <code>4\d{2}</code> e <code>5\d{2}</code> para mapear para 400 e 500. Use os <a href="#respostas" onclick="document.getElementById('respostas').open = true">templates completos de resposta de cada rota</a>. Os templates de erro convertem <code>RequestThrottled</code> em 429 e incluem <code>source=SQS</code>. Preserve as listas <code>Successful</code> e <code>Failed</code> em HTTP 200 para a geradora contar o resultado de cada pedido. <a href="https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SendMessageBatch.html">Contrato de SendMessageBatch</a></p>
+<details id="modelos"><summary>Schemas JSON de Order e OrderBatch</summary><h4>Order</h4><pre><code class="language-json">{
+  &quot;$schema&quot;: &quot;http://json-schema.org/draft-04/schema#&quot;,
+  &quot;type&quot;: &quot;object&quot;,
+  &quot;required&quot;: [
+    &quot;runId&quot;,
+    &quot;orderId&quot;,
+    &quot;shard&quot;
+  ],
+  &quot;additionalProperties&quot;: false,
+  &quot;properties&quot;: {
+    &quot;runId&quot;: {
+      &quot;type&quot;: &quot;string&quot;,
+      &quot;pattern&quot;: &quot;^[a-f0-9-]{36}$&quot;
+    },
+    &quot;orderId&quot;: {
+      &quot;type&quot;: &quot;string&quot;,
+      &quot;pattern&quot;: &quot;^[a-zA-Z0-9_-]{1,100}$&quot;
+    },
+    &quot;shard&quot;: {
+      &quot;type&quot;: &quot;integer&quot;,
+      &quot;minimum&quot;: 0,
+      &quot;maximum&quot;: 1023
+    },
+    &quot;sentAt&quot;: {
+      &quot;type&quot;: &quot;integer&quot;,
+      &quot;minimum&quot;: 0
+    }
+  }
+}</code></pre><h4>OrderBatch</h4><pre><code class="language-json">{
+  &quot;$schema&quot;: &quot;http://json-schema.org/draft-04/schema#&quot;,
+  &quot;type&quot;: &quot;object&quot;,
+  &quot;required&quot;: [
+    &quot;orders&quot;
+  ],
+  &quot;additionalProperties&quot;: false,
+  &quot;properties&quot;: {
+    &quot;orders&quot;: {
+      &quot;type&quot;: &quot;array&quot;,
+      &quot;minItems&quot;: 1,
+      &quot;maxItems&quot;: 10,
+      &quot;items&quot;: {
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;required&quot;: [
+          &quot;runId&quot;,
+          &quot;orderId&quot;,
+          &quot;shard&quot;
+        ],
+        &quot;additionalProperties&quot;: false,
+        &quot;properties&quot;: {
+          &quot;runId&quot;: {
+            &quot;type&quot;: &quot;string&quot;,
+            &quot;pattern&quot;: &quot;^[a-f0-9-]{36}$&quot;
+          },
+          &quot;orderId&quot;: {
+            &quot;type&quot;: &quot;string&quot;,
+            &quot;pattern&quot;: &quot;^[a-zA-Z0-9_-]{1,100}$&quot;
+          },
+          &quot;shard&quot;: {
+            &quot;type&quot;: &quot;integer&quot;,
+            &quot;minimum&quot;: 0,
+            &quot;maximum&quot;: 1023
+          },
+          &quot;sentAt&quot;: {
+            &quot;type&quot;: &quot;integer&quot;,
+            &quot;minimum&quot;: 0
+          }
+        }
+      }
+    }
+  }
+}</code></pre></details>
+<details id="respostas"><summary>Mappings de resposta dos pedidos</summary><pre><code>/orders:
+  default:
+    statusCode: &#x27;202&#x27;
+    responseParameters: {method.response.header.Access-Control-Allow-Origin: &quot;&#x27;*&#x27;&quot;}
+    responseTemplates: {application/json: &#x27;{&quot;accepted&quot;:true}&#x27;}
+  &#x27;4\d{2}&#x27;:
+    statusCode: &#x27;400&#x27;
+    responseParameters: {method.response.header.Access-Control-Allow-Origin: &quot;&#x27;*&#x27;&quot;}
+    responseTemplates:
+      application/json: |
+        #set($code = &quot;SqsRejected&quot;)
+        #if($input.body.contains(&quot;RequestThrottled&quot;))
+          #set($context.responseOverride.status = 429)
+          #set($code = &quot;RequestThrottled&quot;)
+        #end
+        {&quot;source&quot;:&quot;SQS&quot;,&quot;code&quot;:&quot;$code&quot;,&quot;requestId&quot;:&quot;$context.requestId&quot;,&quot;details&quot;:&quot;$util.escapeJavaScript($input.body).replaceAll(&quot;\\&#x27;&quot;,&quot;&#x27;&quot;)&quot;}
+  &#x27;5\d{2}&#x27;:
+    statusCode: &#x27;500&#x27;
+    responseParameters: {method.response.header.Access-Control-Allow-Origin: &quot;&#x27;*&#x27;&quot;}
+    responseTemplates:
+      application/json: |
+        {&quot;source&quot;:&quot;SQS&quot;,&quot;code&quot;:&quot;SqsUnavailable&quot;,&quot;requestId&quot;:&quot;$context.requestId&quot;,&quot;details&quot;:&quot;$util.escapeJavaScript($input.body).replaceAll(&quot;\\&#x27;&quot;,&quot;&#x27;&quot;)&quot;}
+
+/orders/batch:
+  default:
+    statusCode: &#x27;200&#x27;
+    responseParameters: {method.response.header.Access-Control-Allow-Origin: &quot;&#x27;*&#x27;&quot;}
+    responseTemplates: {application/json: &#x27;$input.body&#x27;}
+  &#x27;4\d{2}&#x27;:
+    statusCode: &#x27;400&#x27;
+    responseParameters: {method.response.header.Access-Control-Allow-Origin: &quot;&#x27;*&#x27;&quot;}
+    responseTemplates:
+      application/json: |
+        #set($code = &quot;SqsRejected&quot;)
+        #if($input.body.contains(&quot;RequestThrottled&quot;))
+          #set($context.responseOverride.status = 429)
+          #set($code = &quot;RequestThrottled&quot;)
+        #end
+        {&quot;source&quot;:&quot;SQS&quot;,&quot;code&quot;:&quot;$code&quot;,&quot;requestId&quot;:&quot;$context.requestId&quot;,&quot;details&quot;:$input.body}
+  &#x27;5\d{2}&#x27;:
+    statusCode: &#x27;500&#x27;
+    responseParameters: {method.response.header.Access-Control-Allow-Origin: &quot;&#x27;*&#x27;&quot;}
+    responseTemplates:
+      application/json: &#x27;{&quot;source&quot;:&quot;SQS&quot;,&quot;code&quot;:&quot;SqsUnavailable&quot;,&quot;requestId&quot;:&quot;$context.requestId&quot;}&#x27;</code></pre></details>
+<h3 id="headers-cors">Headers, CORS, stage e chave</h3>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>Onde</th>
+<th>Headers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Navegador ou geradora → Gateway, POST</td>
+<td><code>Content-Type: application/json</code> e <code>x-api-key: SUA_CHAVE</code></td>
+</tr>
+<tr>
+<td>Navegador → Gateway, GET</td>
+<td><code>x-api-key: SUA_CHAVE</code>. O painel também envia <code>Content-Type: application/json</code></td>
+</tr>
+<tr>
+<td>Resposta do <code>OPTIONS</code></td>
+<td><code>Access-Control-Allow-Origin: *</code>, <code>Access-Control-Allow-Methods: GET,POST,OPTIONS</code> e <code>Access-Control-Allow-Headers: Content-Type,X-Api-Key</code></td>
+</tr>
+<tr>
+<td>Resposta de negócio ou de erro</td>
+<td><code>Access-Control-Allow-Origin: *</code>. A Control já envia esse header no retorno proxy. Nas integrações com o SQS, mapeie em <strong>Integration response</strong></td>
+</tr>
+</tbody>
+</table></div>
+<ol>
+<li>Em <strong>Resources → Enable CORS</strong>, configure os quatro recursos com os valores acima. Em <strong>Gateway responses</strong>, inclua <code>Access-Control-Allow-Origin</code> com valor estático <code>'*'</code> em <code>DEFAULT_4XX</code> e <code>DEFAULT_5XX</code>. Mantenha a chave desabilitada em <code>OPTIONS</code>. <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html">CORS em REST APIs</a></li>
+<li>Em <strong>Deploy API</strong>, crie o stage <code>live</code> e copie a <strong>Invoke URL</strong>, incluindo <code>/live</code>. Faça novo deploy desse stage ao alterar os métodos ou integrações.</li>
+<li>Em <strong>API Keys → Create API key</strong>, crie uma chave habilitada com valor gerado pela AWS. Em <strong>Usage plans → Create</strong>, configure o perfil inicial com <strong>2.500 req/s</strong> e <strong>burst 500</strong>. <a href="#burst-limit">Entenda o burst</a>. Associe o stage <code>live</code> e adicione a chave ao plano. As rotas recebem a chave em <code>x-api-key</code>. <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-setup-api-keys.html">Vincular API key ao usage plan</a></li>
+</ol>
+</section>
+<section>
+<h2 id="s3-cloudfront">3. Crie o S3 e publique o front no CloudFront</h2>
+<ol>
+<li>Em <strong>S3 → Create bucket</strong>, crie um bucket privado, com nome globalmente único, <strong>Block all public access</strong> ligado e <strong>Bucket owner enforced</strong>. Mantenha criptografia SSE-S3 e use o endpoint regional normal do bucket.</li>
+<li>Na raiz do laboratório, copie <code>site/.env.example</code> para <code>site/.env</code>, informe a URL com o stage e configure o mesmo limite, número de shards e tamanho de lote das Lambdas. Rode <code>npm --prefix site ci</code> e <code>npm --prefix site run build</code>. Em <strong>S3 → Objects → Upload</strong>, envie o <strong>conteúdo</strong> de <code>site/dist/</code> para a raiz do bucket. O resultado deve ter <code>index.html</code> e <code>assets/</code> na raiz.</li>
+<li>Em <strong>CloudFront → Create distribution</strong>, selecione o bucket como origem S3, use <strong>Origin Access Control</strong> com <strong>Sign requests</strong> e configure <strong>Redirect HTTP to HTTPS</strong>, métodos <strong>GET, HEAD</strong> e <strong>Default root object = index.html</strong>. Mantenha a política gerenciada <code>CachingOptimized</code> se quiser reproduzir a stack.</li>
+<li>Em <strong>S3 → Permissions → Bucket policy</strong>, confira se o CloudFront adicionou a permissão. Se precisar colar manualmente, dê ao principal <code>cloudfront.amazonaws.com</code> a ação <code>s3:GetObject</code> sobre <code>arn:aws:s3:::NOME_DO_BUCKET/*</code>, com a condição <code>StringEquals</code> para <code>AWS:SourceArn = arn:aws:cloudfront::ID_DA_CONTA:distribution/ID_DA_DISTRIBUICAO</code>. Aguarde a distribuição ficar disponível e abra seu domínio. <a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/GettingStarted.SimpleDistribution.html">Distribuição com S3 privado</a> · <a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html">Política de bucket para OAC</a></li>
+<li>No painel, abra <strong>Conexão &amp; execução</strong> e informe a chave. Confira a leitura do histórico antes de disparar carga. Após publicar uma atualização do front, envie os assets e o novo <code>index.html</code> e invalide <code>/</code> e <code>/index.html</code> em <strong>CloudFront → Invalidations</strong>.</li>
+</ol>
+</section>
+<section>
+<h2 id="dimensionamento">4. Dimensione de 100 mil a 1 milhão</h2>
+<p>Cada linha considera 60 s, 1.024 shards, até 10 pedidos por lote do mesmo shard e estoque igual ao volume. Na tabela, ⌈x⌉ arredonda x para cima.</p>
+<p><strong>Base medida: 1 milhão em 60 s.</strong> Na execução <code>72e3e62d-8ab0-4987-9733-5b5035a3b42d</code>, 50 workers fizeram 100.352 chamadas HTTP em lote. O SQS aceitou os 1.000.000 de pedidos e a Processor processou todos em 4 min 20,3 s desde o início programado. Foram zero erros de envio, zero não enviados e zero rejeições por estoque. O perfil de infraestrutura registrado usava concorrência máxima 128, orçamento de 96 unidades de escrita/s por invocação, warm write configurado em 16.000 e usage plan com rate 20.000 e burst 5.000. O warm throughput ativo pode crescer automaticamente. As linhas menores são projeções para a mesma janela, calculadas a partir dessa referência.</p>
+<ul>
+<li><strong>Maximum concurrency da Processor (configuração).</strong> No console, vá a <strong>Lambda → Processor → Configuration → Triggers → gatilho SQS → Edit → Maximum concurrency</strong>. O 13 da primeira linha permite até 13 invocações simultâneas da Processor para esse gatilho, depois que os pedidos já estão na fila. Na FIFO, o paralelismo também depende dos grupos com trabalho disponível. <a href="https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html">Documentação da AWS sobre concorrência com SQS</a>.</li>
+</ul>
+<div class="table-scroll" tabindex="0"><table class="sizing-table">
+<thead>
+<tr>
+<th scope="col">Pedidos<small>Valor escolhido no painel</small></th>
+<th scope="col">Pedidos/s<small>Referência · ⌈pedidos ÷ 60 s⌉</small></th>
+<th scope="col">Workers estimados pela proporção do benchmark<small>⌈50 × total de chamadas HTTP ÷ 100.352⌉</small></th>
+<th scope="col">Maximum concurrency da Processor<small>⌈128 × pedidos ÷ 1.000.000⌉</small></th>
+<th scope="col">DynamoDB warm write/s inicial<small>16.000 × pedidos ÷ 1.000.000, com piso de 4.000</small></th>
+<th scope="col">Rate do usage plan em lote<small>20.000 × pedidos ÷ 1.000.000, com piso de 2.500</small></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">100.000</th>
+<td><strong>1.667</strong><small><span>⌈100.000 ÷ 60⌉</span></small></td>
+<td><strong>6</strong><small><span>⌈50 × 10.240 ÷ 100.352⌉</span></small></td>
+<td><strong>13</strong><small><span>⌈128 × 100.000 ÷ 1.000.000⌉</span></small></td>
+<td><strong>4.000</strong><small><span>16.000 × 100.000 ÷ 1.000.000 = 1.600</span><span>Piso de 4.000 aplicado</span></small></td>
+<td><strong>2.500</strong><small><span>20.000 × 100.000 ÷ 1.000.000 = 2.000</span><span>Piso de 2.500 aplicado</span></small></td>
+</tr>
+<tr>
+<th scope="row">200.000</th>
+<td><strong>3.334</strong><small><span>⌈200.000 ÷ 60⌉</span></small></td>
+<td><strong>11</strong><small><span>⌈50 × 20.480 ÷ 100.352⌉</span></small></td>
+<td><strong>26</strong><small><span>⌈128 × 200.000 ÷ 1.000.000⌉</span></small></td>
+<td><strong>4.000</strong><small><span>16.000 × 200.000 ÷ 1.000.000 = 3.200</span><span>Piso de 4.000 aplicado</span></small></td>
+<td><strong>4.000</strong><small><span>20.000 × 200.000 ÷ 1.000.000</span></small></td>
+</tr>
+<tr>
+<th scope="row">400.000</th>
+<td><strong>6.667</strong><small><span>⌈400.000 ÷ 60⌉</span></small></td>
+<td><strong>21</strong><small><span>⌈50 × 40.576 ÷ 100.352⌉</span></small></td>
+<td><strong>52</strong><small><span>⌈128 × 400.000 ÷ 1.000.000⌉</span></small></td>
+<td><strong>6.400</strong><small><span>16.000 × 400.000 ÷ 1.000.000</span></small></td>
+<td><strong>8.000</strong><small><span>20.000 × 400.000 ÷ 1.000.000</span></small></td>
+</tr>
+<tr>
+<th scope="row">500.000</th>
+<td><strong>8.334</strong><small><span>⌈500.000 ÷ 60⌉</span></small></td>
+<td><strong>25</strong><small><span>⌈50 × 50.176 ÷ 100.352⌉</span></small></td>
+<td><strong>64</strong><small><span>⌈128 × 500.000 ÷ 1.000.000⌉</span></small></td>
+<td><strong>8.000</strong><small><span>16.000 × 500.000 ÷ 1.000.000</span></small></td>
+<td><strong>10.000</strong><small><span>20.000 × 500.000 ÷ 1.000.000</span></small></td>
+</tr>
+<tr>
+<th scope="row">1.000.000</th>
+<td><strong>16.667</strong><small><span>⌈1.000.000 ÷ 60⌉</span></small></td>
+<td><strong>50</strong><small><span>⌈50 × 100.352 ÷ 100.352⌉</span></small></td>
+<td><strong>128</strong><small><span>⌈128 × 1.000.000 ÷ 1.000.000⌉</span></small></td>
+<td><strong>16.000</strong><small><span>16.000 × 1.000.000 ÷ 1.000.000</span></small></td>
+<td><strong>20.000</strong><small><span>20.000 × 1.000.000 ÷ 1.000.000</span></small></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="shards">O que é um shard neste laboratório?</h3>
+<p>Um shard é uma parte do estoque de uma execução. A Lambda Control cria um item no DynamoDB por shard, com saldo próprio. O API Gateway usa o ID da execução e o número do shard para montar o grupo FIFO no SQS. Assim, pedidos do mesmo shard seguem em ordem, enquanto grupos diferentes podem avançar em paralelo e atualizar itens diferentes do estoque.</p>
+<p>O roteiro usa 1.024 shards em todas as linhas para comparar os volumes com a mesma configuração do teste de 1 milhão. Com mais shards, as atualizações se distribuem entre mais itens do DynamoDB e há mais grupos FIFO disponíveis para processamento em paralelo.</p>
+<p>O código do laboratório usa 1.024 shards e lotes de até 10 pedidos. O painel e as Lambdas usam os mesmos valores ao calcular o envio.</p>
+<h4>Como os shards entram na conta dos workers</h4>
+<p>Com 100 mil pedidos, estoque inicial de 100 mil e 1.024 shards, 672 shards recebem 98 pedidos e 98 unidades de estoque, e 352 recebem 97 de cada. Cada shard precisa de 10 lotes de até 10 pedidos, somando 10.240 chamadas HTTP. A sugestão de workers usa esse total e a referência do benchmark (⌈50 × 10.240 ÷ 100.352⌉ = 6).</p>
+<p>A tabela mostra uma referência proporcional ao benchmark. Para executar a carga pelo painel, o cálculo automático usa 30 chamadas HTTP/s por worker e chega a 56 workers para 1 milhão de pedidos em lote em 60 s.</p>
+<p>Mantenha os lotes de até 10 no envio e no consumo e 1.024 shards. A processadora usa 96 unidades de escrita/s por invocação, definidas no código. Para 100 mil pedidos, a concorrência resulta de ⌈128 × 100.000 ÷ 1.000.000⌉ = 13. O warm write proporcional seria 1.600, então o roteiro mantém 4.000 como ponto de partida para uma tabela nova. O Rate proporcional seria 2.000, e o perfil inicial mantém 2.500. O rate efetivo também depende da quota regional e do tráfego de outras APIs.</p>
+<p>No modo individual, 100 mil pedidos em 60 s sugerem 56 workers. A partir de 200 mil na mesma janela, a sugestão passa do limite de 100 workers do laboratório. Aumente a janela ou use envio em lote.</p>
+<h3 id="burst-limit">Como funcionam rate e burst no API Gateway</h3>
+<p>O Rate é o ritmo de reposição dos créditos, em chamadas HTTP por segundo. O Burst é a capacidade máxima do balde de créditos para absorver uma rajada curta. Cada chamada consome um crédito. Com Rate de 2.500 req/s e Burst de 500, o balde cheio tem 500 créditos disponíveis imediatamente e é reabastecido a 2.500 por segundo. Se chegar mais tráfego quando os créditos acabarem, o Gateway pode devolver HTTP 429. Os valores do usage plan são aplicados em regime de melhor esforço e também estão sujeitos aos limites do stage e da conta na região. <a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-request-throttling.html">Throttling e token bucket na AWS</a></p>
+<p>O perfil inicial usa Burst 500 porque adotamos 20% do Rate de 2.500 como ponto de partida. Nos demais perfis em lote da tabela, parta do Burst 5.000 do benchmark e use 500 créditos por 100 mil pedidos, respeitando a capacidade de rajada disponível na conta.</p>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>Ajuste</th>
+<th>Onde mudar no Console</th>
+<th>Variável ou parâmetro</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pedidos, janela, estoque e modo</td>
+<td><strong>Painel → Configure a carga</strong></td>
+<td>Informe o volume, a janela, o estoque e o modo de envio. O painel dimensiona os geradores automaticamente.</td>
+</tr>
+<tr>
+<td>Throughput da fila</td>
+<td><strong>SQS → fila FIFO → Edit</strong></td>
+<td><strong>High throughput FIFO</strong> ligado</td>
+</tr>
+<tr>
+<td>Throttle da API</td>
+<td><strong>API Gateway → Usage plans</strong> e <strong>Service Quotas</strong></td>
+<td><strong>Rate</strong> e <strong>Burst</strong> do usage plan. Use o Rate da linha e o Burst proporcional a partir de 5.000 no milhão (500 a cada 100 mil pedidos)</td>
+</tr>
+<tr>
+<td>Consumo da fila</td>
+<td><strong>Lambda Processor → Configuration → Triggers → SQS → Edit</strong></td>
+<td><strong>Maximum concurrency</strong> da tabela e <strong>Batch size 10</strong></td>
+</tr>
+<tr>
+<td>Capacidade disponível no banco</td>
+<td><strong>DynamoDB → tabela → Warm throughput</strong></td>
+<td>Use o valor da coluna <strong>DynamoDB warm write/s inicial</strong>. Se houver teto on-demand ativo, ajuste-o para não limitar a escrita abaixo da capacidade planejada</td>
+</tr>
+</tbody>
+</table></div>
+<p>Os valores são pontos de partida. O maior perfil dá à processadora um orçamento de até <code>128 × 96 = 12.288</code> unidades de escrita/s depois de escalar. O aquecimento dá folga para esse orçamento e outras gravações. Confirme a quota regional do Gateway, os limites FIFO da região, a concorrência disponível da conta e o DynamoDB em <strong>ACTIVE</strong> antes de usar o perfil. O aumento de warm throughput pode gerar cobrança única. Compare pedidos aceitos, não enviados, idade da fila, throttles do DynamoDB, tempo até o último pedido e P95/P99. <a href="https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html">Escala da Lambda com SQS</a> · <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/warm-throughput.html">Warm throughput do DynamoDB</a></p>
+<p>Para o perfil de 500 mil em lote, ajuste a concorrência máxima do gatilho para 64 e o warm write do DynamoDB para pelo menos 8.000. Use Rate 10.000 e Burst 2.500 como pontos de partida. No painel, selecione 500 mil pedidos, 60 s e envio em lote.</p>
+</section>
+
+  </main>
+</div>
+<footer class="wrap"><a href="/workshop/apresentacao#formas-de-testar">Voltar à apresentação</a></footer>
+</body>
+</html>
