@@ -1,18 +1,18 @@
 # 1. Fila de Letras Mortas (DLQ FIFO) - recebe mensagens que falharam após 20 tentativas
 resource "aws_sqs_queue" "orders_dlq" {
-  name                        = "${var.project_name}-orders-dlq.fifo"
+  name                        = "${var.project_name}_sqs_dlq.fifo"
   fifo_queue                  = true
   sqs_managed_sse_enabled     = true # Criptografia SSE-SQS
   message_retention_seconds   = 1209600 # 14 dias
 
   tags = {
-    Name = "${var.project_name}-orders-dlq"
+    Name = "${var.project_name}_sqs_dlq"
   }
 }
 
 # 2. Fila Principal FIFO - recebe os pedidos em alta vazão com ordenação por shard
 resource "aws_sqs_queue" "orders_queue" {
-  name                        = "${var.project_name}-orders.fifo"
+  name                        = "${var.project_name}_sqs.fifo"
   fifo_queue                  = true
   content_based_deduplication = false # Desabilitado pois o Gateway envia orderId explicitamente
   fifo_throughput_limit       = "perMessageGroupId"
@@ -29,6 +29,6 @@ resource "aws_sqs_queue" "orders_queue" {
   })
 
   tags = {
-    Name = "${var.project_name}-orders-queue"
+    Name = "${var.project_name}_sqs"
   }
 }

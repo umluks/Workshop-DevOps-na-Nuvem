@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Prefixo padrão para nomeação de recursos"
   type        = string
-  default     = "blackfriday-lab"
+  default     = "dvn"
 }
 
 variable "shards_count" {

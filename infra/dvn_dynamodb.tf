@@ -1,6 +1,6 @@
 # Tabela DynamoDB para controle de execuções, inventário particionado e pedidos
 resource "aws_dynamodb_table" "orders_table" {
-  name         = "${var.project_name}-orders"
+  name         = "${var.project_name}_dynamodb_orders"
   billing_mode = "PAY_PER_REQUEST" # On-demand: custo zero quando ocioso
   hash_key     = "pk"
   range_key    = "sk"
@@ -25,6 +25,6 @@ resource "aws_dynamodb_table" "orders_table" {
   }
 
   tags = {
-    Name = "${var.project_name}-orders"
+    Name = "${var.project_name}_dynamodb_orders"
   }
 }

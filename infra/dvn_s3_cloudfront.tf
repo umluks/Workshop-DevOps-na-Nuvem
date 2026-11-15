@@ -10,7 +10,7 @@ resource "aws_s3_bucket" "frontend_bucket" {
   force_destroy = true # Facilita limpeza no terraform destroy
 
   tags = {
-    Name = "${var.project_name}-frontend"
+    Name = "${var.project_name}_frontend"
   }
 }
 
@@ -35,7 +35,7 @@ resource "aws_s3_bucket_ownership_controls" "frontend_ownership" {
 # CloudFront Origin Access Control (OAC)
 # ---------------------------------------------------------------------------------------------------------------------
 resource "aws_cloudfront_origin_access_control" "oac" {
-  name                              = "${var.project_name}-oac"
+  name                              = "${var.project_name}_oac"
   description                       = "OAC para acesso seguro do CloudFront ao S3"
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"

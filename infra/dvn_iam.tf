@@ -2,7 +2,7 @@
 # Role da Lambda Controller
 # ---------------------------------------------------------------------------------------------------------------------
 resource "aws_iam_role" "lambda_controller_role" {
-  name = "${var.project_name}-controller-role"
+  name = "dvn_role_lambda_controller"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -20,7 +20,7 @@ resource "aws_iam_role_policy_attachment" "controller_basic" {
 }
 
 resource "aws_iam_role_policy" "controller_custom" {
-  name = "${var.project_name}-controller-policy"
+  name = "dvn_policy_lambda_controller"
   role = aws_iam_role.lambda_controller_role.id
 
   policy = jsonencode({
@@ -60,7 +60,7 @@ resource "aws_iam_role_policy" "controller_custom" {
 # Role da Lambda Generator
 # ---------------------------------------------------------------------------------------------------------------------
 resource "aws_iam_role" "lambda_generator_role" {
-  name = "${var.project_name}-generator-role"
+  name = "dvn_role_lambda_generator"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -78,7 +78,7 @@ resource "aws_iam_role_policy_attachment" "generator_basic" {
 }
 
 resource "aws_iam_role_policy" "generator_custom" {
-  name = "${var.project_name}-generator-policy"
+  name = "dvn_policy_lambda_generator"
   role = aws_iam_role.lambda_generator_role.id
 
   policy = jsonencode({
@@ -97,7 +97,7 @@ resource "aws_iam_role_policy" "generator_custom" {
 # Role da Lambda Processor
 # ---------------------------------------------------------------------------------------------------------------------
 resource "aws_iam_role" "lambda_processor_role" {
-  name = "${var.project_name}-processor-role"
+  name = "dvn_role_lambda_processor"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -115,7 +115,7 @@ resource "aws_iam_role_policy_attachment" "processor_basic" {
 }
 
 resource "aws_iam_role_policy" "processor_custom" {
-  name = "${var.project_name}-processor-policy"
+  name = "dvn_policy_lambda_processor"
   role = aws_iam_role.lambda_processor_role.id
 
   policy = jsonencode({
@@ -148,7 +148,7 @@ resource "aws_iam_role_policy" "processor_custom" {
 # Role do API Gateway para envio direto ao SQS (Sem passar por Lambda)
 # ---------------------------------------------------------------------------------------------------------------------
 resource "aws_iam_role" "apigateway_sqs_role" {
-  name = "${var.project_name}-apigateway-sqs-role"
+  name = "dvn_role_apigateway_sqs"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -161,7 +161,7 @@ resource "aws_iam_role" "apigateway_sqs_role" {
 }
 
 resource "aws_iam_role_policy" "apigateway_sqs_policy" {
-  name = "${var.project_name}-apigateway-sqs-policy"
+  name = "dvn_policy_apigateway_sqs"
   role = aws_iam_role.apigateway_sqs_role.id
 
   policy = jsonencode({

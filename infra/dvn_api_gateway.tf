@@ -2,7 +2,7 @@
 # API Gateway REST API
 # ---------------------------------------------------------------------------------------------------------------------
 resource "aws_api_gateway_rest_api" "orders_api" {
-  name        = "${var.project_name}-api"
+  name        = "${var.project_name}_api"
   description = "API REST de Alta Vazao para Black Friday"
 
   endpoint_configuration {
@@ -466,13 +466,13 @@ resource "aws_api_gateway_stage" "live_stage" {
 # API Key & Usage Plan (2.500 req/s, Burst 500)
 # ---------------------------------------------------------------------------------------------------------------------
 resource "aws_api_gateway_api_key" "orders_key" {
-  name        = "${var.project_name}-key"
+  name        = "${var.project_name}_api_key"
   description = "Chave de acesso da aplicacao web e geradores"
   enabled     = true
 }
 
 resource "aws_api_gateway_usage_plan" "orders_usage_plan" {
-  name        = "${var.project_name}-usage-plan"
+  name        = "${var.project_name}_usage_plan"
   description = "Plano de uso calibrado para testes de carga"
 
   api_stages {
